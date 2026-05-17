@@ -72,7 +72,7 @@ if ($selectedCategory !== '') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PortaPack Mayhem Repository</title>
+    <title>PortaPack Mayhem App Repository</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .neon-green { color: #0f0; text-shadow: 0 0 5px #0f0; }

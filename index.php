@@ -31,10 +31,16 @@ if ($selectedCategory !== '') {
         foreach ($ppmpFiles as $ppmpPath) {
             $baseName = pathinfo($ppmpPath, PATHINFO_FILENAME);
             $txtPath = $targetDir . '/' . $baseName . '.txt';
+            $linkPath = $targetDir . '/' . $baseName . '.link';
             
             $description = 'No description available.';
             if (file_exists($txtPath)) {
                 $description = htmlspecialchars(file_get_contents($txtPath));
+            }
+
+            $videoLink = '';
+            if (file_exists($linkPath)) {
+                $videoLink = trim(file_get_contents($linkPath));
             }
 
             $images = [];
@@ -61,7 +67,8 @@ if ($selectedCategory !== '') {
                 'name' => $baseName,
                 'file' => 'apps/' . $selectedCategory . '/' . $baseName . '.ppmp',
                 'desc' => $description,
-                'images' => $images
+                'images' => $images,
+                'videoLink' => $videoLink
             ];
         }
     }
@@ -111,6 +118,22 @@ if ($selectedCategory !== '') {
                             </a>
                         <?php endforeach; ?>
                     <?php endif; ?>
+                </nav>
+
+                <h2 class="text-xl font-bold text-white mt-10 mb-4 uppercase tracking-wider text-sm border-b border-gray-700 pb-2">Links</h2>
+                <nav class="flex flex-col space-y-2">
+                    <a href="https://hackrf.app" target="_blank" class="px-4 py-2 rounded-md transition-colors duration-200 hover:bg-gray-800 text-gray-400 hover:text-white flex items-center justify-between group">
+                        Mayhem Hub 
+                        <svg class="w-4 h-4 opacity-50 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <a href="https://github.com/htotoo/porta-433" target="_blank" class="px-4 py-2 rounded-md transition-colors duration-200 hover:bg-gray-800 text-gray-400 hover:text-white flex items-center justify-between group">
+                        Porta433
+                        <svg class="w-4 h-4 opacity-50 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <a href="https://ppsplash.creativo.hu/" target="_blank" class="px-4 py-2 rounded-md transition-colors duration-200 hover:bg-gray-800 text-gray-400 hover:text-white flex items-center justify-between group">
+                        Splash screens
+                        <svg class="w-4 h-4 opacity-50 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
                 </nav>
             </aside>
 
@@ -162,7 +185,15 @@ if ($selectedCategory !== '') {
                                 <?php endif; ?>
 
                                 <div class="p-5 flex-grow flex flex-col">
-                                    <h3 class="text-xl font-bold text-white mb-2 font-mono uppercase"><?= htmlspecialchars($app['name']) ?>.ppmp</h3>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="text-xl font-bold text-white font-mono uppercase truncate mr-2"><?= htmlspecialchars($app['name']) ?>.ppmp</h3>
+                                        <?php if (!empty($app['videoLink'])): ?>
+                                            <a href="<?= htmlspecialchars($app['videoLink']) ?>" target="_blank" title="Videó megtekintése" class="text-red-500 hover:text-red-400 transition-transform hover:scale-110 flex-shrink-0">
+                                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                    
                                     <p class="text-gray-400 text-sm mb-4 flex-grow whitespace-pre-wrap"><?= $app['desc'] ?></p>
                                     
                                     <a href="<?= htmlspecialchars($app['file']) ?>" download

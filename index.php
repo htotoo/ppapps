@@ -5,6 +5,40 @@ if (!is_dir($baseDir)) {
     mkdir($baseDir, 0755, true);
 }
 
+// 1. LETÖLTÉS KEZELÉSE ÉS SZÁMLÁLÓ
+if (isset($_GET['cat']) && isset($_GET['download'])) {
+    $dlCat = $_GET['cat'];
+    $dlFile = $_GET['download'];
+
+    // Szigorú biztonsági ellenőrzés (Path Traversal megakadályozása)
+    if (preg_match('/^[a-zA-Z0-9_-]+$/', $dlCat) && preg_match('/^[a-zA-Z0-9_ \.-]+$/', $dlFile)) {
+        $targetFilePath = $baseDir . '/' . $dlCat . '/' . $dlFile . '.ppmp';
+        
+        if (file_exists($targetFilePath)) {
+            $cntPath = $baseDir . '/' . $dlCat . '/' . $dlFile . '.cnt';
+            $count = 0;
+            
+            // Korábbi letöltések beolvasása
+            if (file_exists($cntPath)) {
+                $count = (int)file_get_contents($cntPath);
+            }
+            
+            // Számláló növelése és mentése
+            $count++;
+            file_put_contents($cntPath, $count);
+            
+            // Átirányítás a tényleges fájlra
+            header("Location: apps/" . $dlCat . "/" . rawurlencode($dlFile) . ".ppmp");
+            exit;
+        } else {
+            die('Hiba: A kért fájl nem található!');
+        }
+    } else {
+        die('Biztonsági hiba: Érvénytelen paraméterek!');
+    }
+}
+
+// Eredeti logika folytatása
 $categories = array_filter(glob($baseDir . '/*'), 'is_dir');
 $categories = array_map('basename', $categories);
 
@@ -32,6 +66,7 @@ if ($selectedCategory !== '') {
             $baseName = pathinfo($ppmpPath, PATHINFO_FILENAME);
             $txtPath = $targetDir . '/' . $baseName . '.txt';
             $linkPath = $targetDir . '/' . $baseName . '.link';
+            $cntPath = $targetDir . '/' . $baseName . '.cnt'; // Számláló fájl útvonala
             
             $description = 'No description available.';
             if (file_exists($txtPath)) {
@@ -41,6 +76,12 @@ if ($selectedCategory !== '') {
             $videoLink = '';
             if (file_exists($linkPath)) {
                 $videoLink = trim(file_get_contents($linkPath));
+            }
+
+            // Letöltések számának beolvasása a megjelenítéshez
+            $downloads = 0;
+            if (file_exists($cntPath)) {
+                $downloads = (int)file_get_contents($cntPath);
             }
 
             $images = [];
@@ -68,7 +109,8 @@ if ($selectedCategory !== '') {
                 'file' => 'apps/' . $selectedCategory . '/' . $baseName . '.ppmp',
                 'desc' => $description,
                 'images' => $images,
-                'videoLink' => $videoLink
+                'videoLink' => $videoLink,
+                'downloads' => $downloads // Hozzáadva a tömbhöz
             ];
         }
     }
@@ -195,16 +237,24 @@ if ($selectedCategory !== '') {
                                 <div class="p-5 flex-grow flex flex-col">
                                     <div class="flex items-center justify-between mb-2">
                                         <h3 class="text-xl font-bold text-white font-mono uppercase truncate mr-2"><?= htmlspecialchars($app['name']) ?>.ppmp</h3>
-                                        <?php if (!empty($app['videoLink'])): ?>
-                                            <a href="<?= htmlspecialchars($app['videoLink']) ?>" target="_blank" title="Videó megtekintése" class="text-red-500 hover:text-red-400 transition-transform hover:scale-110 flex-shrink-0">
-                                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                                            </a>
-                                        <?php endif; ?>
+                                        
+                                        <div class="flex items-center space-x-3 flex-shrink-0">
+                                            <div class="text-xs text-gray-400 flex items-center bg-gray-900 px-2 py-1 rounded border border-gray-700" title="Összes letöltés">
+                                                <svg class="w-3 h-3 mr-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                                <?= $app['downloads'] ?>
+                                            </div>
+
+                                            <?php if (!empty($app['videoLink'])): ?>
+                                                <a href="<?= htmlspecialchars($app['videoLink']) ?>" target="_blank" title="Videó megtekintése" class="text-red-500 hover:text-red-400 transition-transform hover:scale-110">
+                                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     
                                     <p class="text-gray-400 text-sm mb-4 flex-grow whitespace-pre-wrap"><?= $app['desc'] ?></p>
                                     
-                                    <a href="<?= htmlspecialchars($app['file']) ?>" download
+                                    <a href="?cat=<?= urlencode($selectedCategory) ?>&download=<?= urlencode($app['name']) ?>" 
                                        class="mt-auto block text-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors flex items-center justify-center space-x-2 border border-gray-600 hover:border-gray-500">
                                         <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         <span>Download</span>

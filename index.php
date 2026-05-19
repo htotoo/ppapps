@@ -5,12 +5,10 @@ if (!is_dir($baseDir)) {
     mkdir($baseDir, 0755, true);
 }
 
-// 1. LETÖLTÉS KEZELÉSE ÉS SZÁMLÁLÓ
 if (isset($_GET['cat']) && isset($_GET['download'])) {
     $dlCat = $_GET['cat'];
     $dlFile = $_GET['download'];
 
-    // Szigorú biztonsági ellenőrzés (Path Traversal megakadályozása)
     if (preg_match('/^[a-zA-Z0-9_-]+$/', $dlCat) && preg_match('/^[a-zA-Z0-9_ \.-]+$/', $dlFile)) {
         $targetFilePath = $baseDir . '/' . $dlCat . '/' . $dlFile . '.ppmp';
         
@@ -18,16 +16,13 @@ if (isset($_GET['cat']) && isset($_GET['download'])) {
             $cntPath = $baseDir . '/' . $dlCat . '/' . $dlFile . '.cnt';
             $count = 0;
             
-            // Korábbi letöltések beolvasása
             if (file_exists($cntPath)) {
                 $count = (int)file_get_contents($cntPath);
             }
             
-            // Számláló növelése és mentése
             $count++;
             file_put_contents($cntPath, $count);
             
-            // Átirányítás a tényleges fájlra
             header("Location: apps/" . $dlCat . "/" . rawurlencode($dlFile) . ".ppmp");
             exit;
         } else {
@@ -38,7 +33,6 @@ if (isset($_GET['cat']) && isset($_GET['download'])) {
     }
 }
 
-// Eredeti logika folytatása
 $categories = array_filter(glob($baseDir . '/*'), 'is_dir');
 $categories = array_map('basename', $categories);
 
@@ -66,7 +60,9 @@ if ($selectedCategory !== '') {
             $baseName = pathinfo($ppmpPath, PATHINFO_FILENAME);
             $txtPath = $targetDir . '/' . $baseName . '.txt';
             $linkPath = $targetDir . '/' . $baseName . '.link';
-            $cntPath = $targetDir . '/' . $baseName . '.cnt'; // Számláló fájl útvonala
+            $cntPath = $targetDir . '/' . $baseName . '.cnt';
+            
+            $version = date('Y.m.d', filemtime($ppmpPath));
             
             $description = 'No description available.';
             if (file_exists($txtPath)) {
@@ -78,7 +74,6 @@ if ($selectedCategory !== '') {
                 $videoLink = trim(file_get_contents($linkPath));
             }
 
-            // Letöltések számának beolvasása a megjelenítéshez
             $downloads = 0;
             if (file_exists($cntPath)) {
                 $downloads = (int)file_get_contents($cntPath);
@@ -110,7 +105,8 @@ if ($selectedCategory !== '') {
                 'desc' => $description,
                 'images' => $images,
                 'videoLink' => $videoLink,
-                'downloads' => $downloads // Hozzáadva a tömbhöz
+                'downloads' => $downloads,
+                'version' => $version
             ];
         }
     }
@@ -236,7 +232,10 @@ if ($selectedCategory !== '') {
 
                                 <div class="p-5 flex-grow flex flex-col">
                                     <div class="flex items-center justify-between mb-2">
-                                        <h3 class="text-xl font-bold text-white font-mono uppercase truncate mr-2"><?= htmlspecialchars($app['name']) ?>.ppmp</h3>
+                                        <div class="flex items-center mr-2">
+                                            <h3 class="text-xl font-bold text-white font-mono uppercase truncate mr-2"><?= htmlspecialchars($app['name']) ?>.ppmp</h3>
+                                            <span class="text-xs font-mono text-green-400 bg-gray-900 px-2 py-1 rounded border border-green-900">v<?= $app['version'] ?></span>
+                                        </div>
                                         
                                         <div class="flex items-center space-x-3 flex-shrink-0">
                                             <div class="text-xs text-gray-400 flex items-center bg-gray-900 px-2 py-1 rounded border border-gray-700" title="Összes letöltés">
